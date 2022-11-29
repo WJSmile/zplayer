@@ -35,8 +35,8 @@ void SLAudioPlay::playCall(void *bufQueue) {
 
 }
 
-void PcmCall(SLAndroidSimpleBufferQueueItf bf, void *contex) {
-    auto *ap = (SLAudioPlay *) contex;
+void PcmCall(SLAndroidSimpleBufferQueueItf bf, void *context) {
+    auto *ap = (SLAudioPlay *) context;
     if (!ap) {
         XLOGE("PcmCall failed contex is null!");
         return;
