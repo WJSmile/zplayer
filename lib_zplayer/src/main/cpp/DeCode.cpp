@@ -42,49 +42,52 @@ bool DeCode::open(AVCodecParameters *avCodecParameters, bool isHard) {
         XLOGE("error %s", av_err2str(re));
         return false;
     }
+
+    resample = new Resample();
     if (avCodecContext->codec_type == AVMEDIA_TYPE_AUDIO) {
+        resample->initAudioSwrContext(avCodecContext);
         XLOGI("打开音频解码器成功");
     } else {
-        if (!isEven(avCodecContext->width) || !isEven(avCodecContext->height)) {
-            swsContext = sws_getContext(avCodecContext->width,
-                                        avCodecContext->height,
-                                        avCodecContext->pix_fmt,
-                                        toEven(avCodecContext->width),
-                                        toEven(avCodecContext->height),
-                                        avCodecContext->pix_fmt,
-                                        SWS_BILINEAR,
-                                        nullptr,
-                                        nullptr,
-                                        nullptr);
-        }
+        resample->initVideoSwsContext(avCodecContext);
         XLOGI("打开视频解码器成功");
     }
     return false;
 }
 
-bool DeCode::sendPacket(XData xData) {
-
+struct SendStatus DeCode::sendPacket(XData xData) {
+    struct SendStatus sendStatus;
     if (xData.size <= 0) {
-        return false;
+        sendStatus.isSuccess = false;
+        sendStatus.isRetry = false;
+        return sendStatus;
     }
 
     if (!avCodecContext) {
-        return false;
+        sendStatus.isSuccess = false;
+        sendStatus.isRetry = false;
+        return sendStatus;
     }
 
     auto *packet = reinterpret_cast<AVPacket *>(xData.data);
     int re = avcodec_send_packet(avCodecContext, packet);
     if (AVERROR(EAGAIN) == re || AVERROR_EOF == re) {
-        return true;
+        sendStatus.isSuccess = true;
+        sendStatus.isRetry = true;
+        return sendStatus;
     } else if (AVERROR(EINVAL) == re) {
         avcodec_flush_buffers(avCodecContext);
-        return false;
+        sendStatus.isSuccess = false;
+        sendStatus.isRetry = false;
+        return sendStatus;
     } else if (re != 0) {
         XLOGE("%s", av_err2str(re));
-        return false;
+        sendStatus.isSuccess = false;
+        sendStatus.isRetry = false;
+        return sendStatus;
     }
-
-    return true;
+    sendStatus.isSuccess = true;
+    sendStatus.isRetry = false;
+    return sendStatus;
 }
 
 XData DeCode::receiveFrame() {
@@ -96,45 +99,43 @@ XData DeCode::receiveFrame() {
         mux.unlock();
         return {};
     }
-    XData xData;
+
     if (avCodecContext->codec_type==AVMEDIA_TYPE_AUDIO){
-        xData.data = reinterpret_cast<unsigned char *>(frame);
-        xData.size =
-                (frame->linesize[0] + frame->linesize[1] + frame->linesize[2]) * frame->height;
+        return resample->audioResample(frame);
 
     } else if (avCodecContext->codec_type==AVMEDIA_TYPE_VIDEO){
-        xData.data = reinterpret_cast<unsigned char *>(frame);
-        xData.size =
-                (frame->linesize[0] + frame->linesize[1] + frame->linesize[2]) * frame->height;
+        return resample->videoResample(frame);
     }
-    xData.width = frame->width;
-    xData.height = frame->height;
-    xData.format = frame->format;
 
     return {};
 }
 
-bool DeCode::isEven(int num) {
-    if (num % 2 == 1 || (num / 2) % 2 == 1) {
-        return false;
-    }
-    return true;
-}
 
-int DeCode::toEven(int num) {
-    if (num % 2 == 1) {
-        num++;
-    }
-    if ((num / 2) % 2 == 1) {
-        num = ((num / 2) + 1) * 2;
-    }
-    return num;
-}
 
 void DeCode::Main() {
-
+    while (!isExit){
+        mux.lock();
+        if (pktList.empty()){
+            mux.unlock();
+            continue;
+        }
+        XData xData = pktList.front();
+        struct SendStatus sendStatus = sendPacket(xData);
+        if (sendStatus.isSuccess){
+            if (!sendStatus.isRetry){
+                pktList.pop_front();
+            }
+            XData framePtk = receiveFrame();
+            if (framePtk.size>0){
+                Notify(framePtk);
+            }
+        }
+        mux.unlock();
+    }
 }
 
 void DeCode::Update(XData data) {
-
+    mux.lock();
+    pktList.push_back(data);
+    mux.unlock();
 }

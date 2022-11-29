@@ -4,27 +4,38 @@
 
 #ifndef ZPLAYER_DECODE_H
 #define ZPLAYER_DECODE_H
-#include "XData.h"
+
+#include "Resample.h"
 #include "IObserver.h"
+#include "list"
+
 struct AVCodecParameters;
 struct AVCodecContext;
 struct AVFrame;
-struct SwsContext;
+struct SendStatus {
+    bool isSuccess = false;
+    bool isRetry = false;
+} SendStatus;
 
-class DeCode: public IObserver{
+class DeCode : public IObserver {
 public:
-    virtual bool open(AVCodecParameters *avCodecParameters,bool isHard);
-    virtual bool sendPacket(XData xData);
+    virtual bool open(AVCodecParameters *avCodecParameters, bool isHard);
+
+    virtual struct SendStatus sendPacket(XData xData);
+
     virtual XData receiveFrame();
-    virtual bool isEven(int num);
-    virtual int toEven(int num);
+
 
 protected:
     virtual void Main();
-    virtual  void Update(XData data);
+
+    virtual void Update(XData data);
+
+    Resample *resample;
+    std::list<XData> pktList;
     AVCodecContext *avCodecContext = nullptr;
     AVFrame *frame = nullptr;
-    SwsContext *swsContext;
+
 };
 
 
