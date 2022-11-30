@@ -72,6 +72,7 @@ XData Unpacking::readFrame() {
         av_packet_free(&avPacket);
         return {};
     }
+    av_packet_free(&avPacket);
     return xData;
 }
 

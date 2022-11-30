@@ -22,9 +22,8 @@ public:
 
     virtual AVCodecParameters *getVideoParameter();
 
-    virtual XData readFrame();
-
 private:
+    virtual XData readFrame();
     AVFormatContext *avFormatContext = nullptr;
     int audioStream = 1;
     int videoStream = 0;

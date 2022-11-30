@@ -5,7 +5,6 @@
 #include "XData.h"
 #include "XThread.h"
 #include <vector>
-#include <mutex>
 class IObserver : public XThread{
 public:
     virtual void Update(XData data){}
@@ -16,7 +15,6 @@ public:
 
 protected:
     std::vector<IObserver *>observers;
-    std::mutex mux;
 };
 
 

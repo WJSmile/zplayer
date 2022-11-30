@@ -2,6 +2,8 @@
 #ifndef ZPLAYER_XTHREAD_H
 #define ZPLAYER_XTHREAD_H
 
+#include <mutex>
+
 void XSleep(int ms);
 
 class XThread {
@@ -14,6 +16,7 @@ public:
 
 protected:
     bool isExit = false;
+    std::mutex mux;
 private:
     virtual void TextureMain();
 };

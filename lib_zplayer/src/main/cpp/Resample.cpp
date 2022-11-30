@@ -82,6 +82,7 @@ XData Resample::videoResample(AVFrame *frame) {
     XData xData;
     xData.isAudio = false;
     xData.data = reinterpret_cast<unsigned char *>(renderFrame);
+    xData.size = (frame->linesize[0] + frame->linesize[1] + frame->linesize[2]) * frame->height;
     xData.width = frame->width;
     xData.height = frame->height;
     return xData;

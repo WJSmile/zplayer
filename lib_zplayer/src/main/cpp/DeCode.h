@@ -19,7 +19,7 @@ struct SendStatus {
 
 class DeCode : public IObserver {
 public:
-    virtual bool open(AVCodecParameters *avCodecParameters, bool isHard);
+    virtual bool open(AVCodecParameters *avCodecParameters, bool isHard = false);
 
     virtual struct SendStatus sendPacket(XData xData);
 
