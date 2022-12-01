@@ -31,6 +31,10 @@ bool VideoView::setDataToWindow(XData xData) {
         }
         ANativeWindow_unlockAndPost(nativeWindow);
         if (videoCallback){
+            double time = videoCallback->getAudioTime();
+            if (time<xData.pts){
+                XSleep((int )((xData.pts-time)*1000.0));
+            }
             XLOGE(">>>>>%f>>>>%f",videoCallback->getAudioTime(),videoCallback->getAudioTime()- xData.pts);
         }
         return true;
