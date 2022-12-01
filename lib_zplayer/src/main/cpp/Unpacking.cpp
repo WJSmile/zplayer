@@ -30,18 +30,17 @@ bool Unpacking::open(const char *url) {
     return true;
 }
 
-AVCodecParameters *Unpacking::getAudioParameter() {
+AVStream *Unpacking::getAudioParameter() {
 
     audioStream = av_find_best_stream(avFormatContext, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0);
     if (audioStream < 0) {
         XLOGE("get audio error%s", av_err2str(audioStream));
         return nullptr;
     }
-
-    return avFormatContext->streams[audioStream]->codecpar;
+    return avFormatContext->streams[audioStream];
 }
 
-AVCodecParameters *Unpacking::getVideoParameter() {
+AVStream *Unpacking::getVideoParameter() {
 
     videoStream = av_find_best_stream(avFormatContext, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
     if (videoStream < 0) {
@@ -49,7 +48,7 @@ AVCodecParameters *Unpacking::getVideoParameter() {
         return nullptr;
     }
 
-    return avFormatContext->streams[videoStream]->codecpar;
+    return avFormatContext->streams[videoStream];
 }
 
 XData Unpacking::readFrame() {
@@ -85,6 +84,8 @@ void Unpacking::Main() {
         }
     }
 }
+
+
 
 
 

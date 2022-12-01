@@ -6,7 +6,9 @@
 #define ZPLAYER_RESAMPLE_H
 
 #include "XData.h"
-
+extern "C" {
+#include <libavutil/rational.h>
+}
 struct AVCodecParameters;
 struct AVCodecContext;
 struct SwrContext;
@@ -16,14 +18,16 @@ struct AVFrame;
 
 class Resample {
 public:
-    virtual void initAudioSwrContext(AVCodecContext *avCodecContext);
-    virtual void initVideoSwsContext(AVCodecContext *avCodecContext);
+    virtual void initAudioSwrContext(AVCodecContext *avCodecContext,AVRational audioTimeBase);
+    virtual void initVideoSwsContext(AVCodecContext *avCodecContext,AVRational videoTimeBase);
     virtual XData audioResample(AVFrame *frame);
     virtual XData videoResample(AVFrame *frame);
 
 protected:
     SwrContext *audioSwrContext;
     SwsContext *videoSwsContext;
+    AVRational audioTimeBase;
+    AVRational videoTimeBase;
 };
 
 

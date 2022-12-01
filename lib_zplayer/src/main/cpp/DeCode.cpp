@@ -12,7 +12,7 @@ extern "C" {
 #include <libavcodec/jni.h>
 }
 
-bool DeCode::open(AVCodecParameters *avCodecParameters, bool isHard) {
+bool DeCode::open(AVCodecParameters *avCodecParameters,AVRational timeBase, bool isHard) {
 
     const AVCodec *avCodec;
 
@@ -42,13 +42,12 @@ bool DeCode::open(AVCodecParameters *avCodecParameters, bool isHard) {
         XLOGE("error %s", av_err2str(re));
         return false;
     }
-
     resample = new Resample();
     if (avCodecContext->codec_type == AVMEDIA_TYPE_AUDIO) {
-        resample->initAudioSwrContext(avCodecContext);
+        resample->initAudioSwrContext(avCodecContext,timeBase);
         XLOGI("打开音频解码器成功");
     } else {
-        resample->initVideoSwsContext(avCodecContext);
+        resample->initVideoSwsContext(avCodecContext,timeBase);
         XLOGI("打开视频解码器成功");
     }
     return true;

@@ -4,7 +4,6 @@
 
 #include "SLAudioPlay.h"
 #include "XLog.h"
-
 SLAudioPlay::SLAudioPlay() {
     buf = new unsigned char[1024 * 1024];
 }
@@ -19,13 +18,14 @@ void SLAudioPlay::playCall(void *bufQueue) {
         return;
     }
     mux.lock();
-    if (frames.empty()) {
+    if (audioList.empty()) {
         XLOGE("audio frames size is 0");
         mux.unlock();
         return;
     }
-    XData xData = frames.front();
-    if (xData.size <= 0) {
+    XData xData = audioList.front();
+    audioList.pop_front();
+    if (xData.size == 0) {
         XLOGE("audioFrame size is 0");
         mux.unlock();
         return;
@@ -34,6 +34,7 @@ void SLAudioPlay::playCall(void *bufQueue) {
         mux.unlock();
         return;
     }
+    pts = xData.pts;
     memcpy(buf, xData.data, xData.size);
     if (pcmQue && (*pcmQue)) {
         (*pcmQue)->Enqueue(pcmQue, buf, xData.size);
@@ -52,6 +53,7 @@ void PcmCall(SLAndroidSimpleBufferQueueItf bf, void *context) {
 }
 
 bool SLAudioPlay::createSL(int channels, int sample_rate) {
+
     SLresult re;
     re = slCreateEngine(&engineSL, 0, nullptr, 0, nullptr, nullptr);
     if (re != SL_RESULT_SUCCESS) return false;
@@ -143,11 +145,15 @@ void SLAudioPlay::paused() {
 
 void SLAudioPlay::Update(XData data) {
     mux.lock();
-    if (data.isAudio) {
-        frames.push_back(data);
-    }
+    audioList.push_back(data);
     mux.unlock();
 }
+
+double SLAudioPlay::getPlayTime() {
+    return pts;
+}
+
+
 
 
 

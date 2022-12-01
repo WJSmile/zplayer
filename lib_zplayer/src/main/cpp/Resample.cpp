@@ -4,6 +4,7 @@
 
 
 #include "Resample.h"
+#include "XLog.h"
 
 extern "C" {
 #include <libswscale/swscale.h>
@@ -12,7 +13,7 @@ extern "C" {
 #include <libavutil/imgutils.h>
 }
 
-void Resample::initAudioSwrContext(AVCodecContext *avCodecContext) {
+void Resample::initAudioSwrContext(AVCodecContext *avCodecContext, AVRational audioTimeBase) {
     audioSwrContext = swr_alloc();
     swr_alloc_set_opts2(&audioSwrContext,
                         &avCodecContext->ch_layout,
@@ -21,10 +22,11 @@ void Resample::initAudioSwrContext(AVCodecContext *avCodecContext) {
                         &avCodecContext->ch_layout,
                         avCodecContext->sample_fmt, avCodecContext->sample_rate,
                         0, nullptr);
+    this->audioTimeBase = audioTimeBase;
     swr_init(audioSwrContext);
 }
 
-void Resample::initVideoSwsContext(AVCodecContext *avCodecContext) {
+void Resample::initVideoSwsContext(AVCodecContext *avCodecContext, AVRational videoTimeBase) {
 
     videoSwsContext = sws_getContext(avCodecContext->width,
                                      avCodecContext->height,
@@ -36,6 +38,7 @@ void Resample::initVideoSwsContext(AVCodecContext *avCodecContext) {
                                      nullptr,
                                      nullptr,
                                      nullptr);
+    this->videoTimeBase =videoTimeBase;
 }
 
 XData Resample::audioResample(AVFrame *frame) {
@@ -53,7 +56,9 @@ XData Resample::audioResample(AVFrame *frame) {
     swr_convert(audioSwrContext, &audioBuf,
                 lastEnqueueBufferSize, (const uint8_t **) frame->data,
                 frame->nb_samples);
+
     XData xData;
+    xData.pts = av_q2d(audioTimeBase) * (double) frame->pts;
     xData.isAudio = true;
     xData.data = audioBuf;
     xData.size = lastEnqueueBufferSize;
@@ -80,6 +85,7 @@ XData Resample::videoResample(AVFrame *frame) {
               frame->linesize, 0, frame->height,
               renderFrame->data, renderFrame->linesize);
     XData xData;
+    xData.pts = av_q2d(videoTimeBase) * (double) frame->pts;
     xData.isAudio = false;
     xData.data = reinterpret_cast<unsigned char *>(renderFrame);
     xData.size = (frame->linesize[0] + frame->linesize[1] + frame->linesize[2]) * frame->height;

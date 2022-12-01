@@ -6,7 +6,10 @@
 #define ZPLAYER_VIDEOVIEW_H
 
 
+#include <list>
 #include "IObserver.h"
+#include "VideoCallback.h"
+
 extern "C" {
 #include <android/native_window_jni.h>
 }
@@ -22,6 +25,8 @@ public:
 
     virtual bool setDataToWindow(XData xData);
 
+    virtual void setVideoCallback(VideoCallback *callback);
+
 protected:
     void Update(XData data) override;
 
@@ -31,7 +36,9 @@ protected:
 
     ANativeWindow_Buffer windowBuffer{};
 
-    std::vector<XData> videoList;
+    VideoCallback *videoCallback = 0;
+
+    std::list<XData> videoList;
     std::mutex mux;
 };
 

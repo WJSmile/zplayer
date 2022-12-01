@@ -1,8 +1,19 @@
 #include <jni.h>
 #include <string>
-#include <android/native_window_jni.h>
+
 #include "Player.h"
 #include "XLog.h"
+
+extern "C" {
+#include <android/native_window_jni.h>
+#include <libavcodec/jni.h>
+}
+extern "C"
+JNIEXPORT
+jint JNI_OnLoad(JavaVM *vm, void *res) {
+    av_jni_set_java_vm(vm, nullptr);
+    return JNI_VERSION_1_6;
+}
 
 Player *getDistinguishFromObj(JNIEnv *env, jobject obj) {
     auto objClazz = (jclass) env->GetObjectClass(obj);

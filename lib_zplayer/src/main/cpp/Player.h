@@ -6,6 +6,7 @@
 #define ZPLAYER_PLAYER_H
 
 #include <mutex>
+#include "VideoCallback.h"
 
 struct ANativeWindow;
 struct Unpacking;
@@ -13,15 +14,17 @@ struct DeCode;
 struct SLAudioPlay;
 struct VideoView;
 
-class Player  {
+class Player : public VideoCallback {
 public:
-    virtual void open(const char *url,ANativeWindow *aNativeWindow);
+    virtual void open(const char *url, ANativeWindow *aNativeWindow);
 
     virtual void paused(bool isPaused);
 
     virtual void stop();
 
 protected:
+    double getAudioTime() override;
+
     Unpacking *unpacking;
     DeCode *audioDeCode;
     DeCode *videoDeCode;

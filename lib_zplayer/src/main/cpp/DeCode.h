@@ -10,6 +10,9 @@
 #include "list"
 #include "SendStatus.h"
 
+extern "C" {
+#include <libavutil/rational.h>
+}
 struct AVCodecParameters;
 struct AVCodecContext;
 struct AVFrame;
@@ -17,7 +20,7 @@ struct AVFrame;
 
 class DeCode : public IObserver {
 public:
-    virtual bool open(AVCodecParameters *avCodecParameters, bool isHard = false);
+    virtual bool open(AVCodecParameters *avCodecParameters,AVRational timeBase ,bool isHard = false);
 
     virtual  SendStatus sendPacket(XData xData);
 

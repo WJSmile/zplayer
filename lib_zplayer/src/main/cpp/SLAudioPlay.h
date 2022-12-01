@@ -8,25 +8,31 @@
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
 #include "IObserver.h"
+#include <list>
 
-class SLAudioPlay: public IObserver{
+class SLAudioPlay : public IObserver {
 public:
     SLAudioPlay();
 
     virtual ~SLAudioPlay();
 
-    virtual bool createSL(int channels,int sample_rate);
+    virtual bool createSL(int channels, int sample_rate);
 
     virtual void playCall(void *bufQueue);
 
     virtual void start();
+
     virtual void stop();
 
     virtual void paused();
 
+    virtual double getPlayTime();
+    double pts = 0;
 protected:
     void Update(XData data) override;
+
 private:
+
     unsigned char *buf = 0;
     SLObjectItf engineSL = nullptr;
     SLEngineItf eng = nullptr;
@@ -34,7 +40,7 @@ private:
     SLObjectItf player = nullptr;
     SLPlayItf slPlayer = nullptr;
     SLAndroidSimpleBufferQueueItf pcmQue = nullptr;
-    std::vector<XData> frames;
+    std::list<XData> audioList;
     std::mutex mux;
 };
 

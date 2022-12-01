@@ -10,6 +10,7 @@
 
 extern "C" {
 #include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
 }
 
 
@@ -24,19 +25,19 @@ void Player::open(const char *url,ANativeWindow *aNativeWindow) {
 
     slAudioPlay = new SLAudioPlay();
 
-    AVCodecParameters *avCodecParametersAudio = unpacking->getAudioParameter();
-    if (!audioDeCode->open(avCodecParametersAudio)) {
+    AVStream *avStreamAudio = unpacking->getAudioParameter();
+    if (!audioDeCode->open(avStreamAudio->codecpar,avStreamAudio->time_base)) {
         mux.unlock();
         return;
     }
-    AVCodecParameters *avCodecParametersVideo = unpacking->getVideoParameter();
-    if (!videoDeCode->open(avCodecParametersVideo)) {
+    AVStream *avStreamAudioVideo = unpacking->getVideoParameter();
+    if (!videoDeCode->open(avStreamAudioVideo->codecpar,avStreamAudioVideo->time_base)) {
         mux.unlock();
         return;
     }
-    slAudioPlay->createSL(avCodecParametersAudio->ch_layout.nb_channels,avCodecParametersAudio->sample_rate);
+    slAudioPlay->createSL(avStreamAudio->codecpar->ch_layout.nb_channels,avStreamAudio->codecpar->sample_rate);
 
-    videoView = new VideoView(aNativeWindow, avCodecParametersVideo->width, avCodecParametersVideo->height);
+    videoView = new VideoView(aNativeWindow, avStreamAudioVideo->codecpar->width, avStreamAudioVideo->codecpar->height);
 
     unpacking->AddObs(audioDeCode);
 
@@ -45,7 +46,7 @@ void Player::open(const char *url,ANativeWindow *aNativeWindow) {
     audioDeCode->AddObs(slAudioPlay);
 
     videoDeCode->AddObs(videoView);
-
+    videoView->setVideoCallback(this);
     unpacking->Start();
     audioDeCode->Start();
     videoDeCode->Start();
@@ -77,6 +78,10 @@ void Player::stop() {
         videoView->stop();
     }
     mux.unlock();
+}
+
+double Player::getAudioTime() {
+    return slAudioPlay->getPlayTime();
 }
 
 

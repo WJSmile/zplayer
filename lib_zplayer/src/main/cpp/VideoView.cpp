@@ -30,6 +30,9 @@ bool VideoView::setDataToWindow(XData xData) {
             memcpy(dst + i * dstStride, src + i * srcStride, srcStride);
         }
         ANativeWindow_unlockAndPost(nativeWindow);
+        if (videoCallback){
+            XLOGE(">>>>>%f>>>>%f",videoCallback->getAudioTime(),videoCallback->getAudioTime()- xData.pts);
+        }
         return true;
     }
 }
@@ -57,10 +60,14 @@ void VideoView::Main() {
         }
         XData xData = videoList.front();
         if (setDataToWindow(xData)){
-            videoList.pop_back();
+            videoList.pop_front();
         }
         mux.unlock();
     }
+}
+
+void VideoView::setVideoCallback(VideoCallback *callback) {
+    this->videoCallback =callback;
 }
 
 

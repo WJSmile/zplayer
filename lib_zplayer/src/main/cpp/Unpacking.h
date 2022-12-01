@@ -10,7 +10,7 @@
 #include "XData.h"
 
 struct AVFormatContext;
-struct AVCodecParameters;
+struct AVStream;
 
 class Unpacking : public IObserver {
 public:
@@ -18,10 +18,9 @@ public:
 
     virtual bool open(const char *url);
 
-    virtual AVCodecParameters *getAudioParameter();
+    virtual AVStream *getAudioParameter();
 
-    virtual AVCodecParameters *getVideoParameter();
-
+    virtual AVStream *getVideoParameter();
 private:
     virtual XData readFrame();
     AVFormatContext *avFormatContext = nullptr;
