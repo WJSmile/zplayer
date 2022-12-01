@@ -19,12 +19,19 @@ void SLAudioPlay::playCall(void *bufQueue) {
         return;
     }
     mux.lock();
+    if (frames.empty()) {
+        XLOGE("audio frames size is 0");
+        mux.unlock();
+        return;
+    }
     XData xData = frames.front();
     if (xData.size <= 0) {
         XLOGE("audioFrame size is 0");
+        mux.unlock();
         return;
     }
     if (!buf) {
+        mux.unlock();
         return;
     }
     memcpy(buf, xData.data, xData.size);
@@ -126,6 +133,10 @@ void SLAudioPlay::start() {
     (*pcmQue)->Enqueue(pcmQue, "", 1);
 }
 
+void SLAudioPlay::stop() {
+    (*slPlayer)->SetPlayState(slPlayer, SL_PLAYSTATE_STOPPED);
+}
+
 void SLAudioPlay::paused() {
     (*slPlayer)->SetPlayState(slPlayer, SL_PLAYSTATE_PAUSED);
 }
@@ -137,6 +148,7 @@ void SLAudioPlay::Update(XData data) {
     }
     mux.unlock();
 }
+
 
 
 

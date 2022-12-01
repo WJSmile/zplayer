@@ -51,11 +51,11 @@ bool DeCode::open(AVCodecParameters *avCodecParameters, bool isHard) {
         resample->initVideoSwsContext(avCodecContext);
         XLOGI("打开视频解码器成功");
     }
-    return false;
+    return true;
 }
 
-struct SendStatus DeCode::sendPacket(XData xData) {
-    struct SendStatus sendStatus;
+SendStatus DeCode::sendPacket(XData xData) {
+    SendStatus sendStatus;
     if (xData.size <= 0) {
         sendStatus.isSuccess = false;
         sendStatus.isRetry = false;
@@ -94,16 +94,18 @@ XData DeCode::receiveFrame() {
     if (!avCodecContext) {
         return {};
     }
+    if (!frame) {
+        frame = av_frame_alloc();
+    }
     int re = avcodec_receive_frame(avCodecContext, frame);
     if (re != 0) {
-        mux.unlock();
         return {};
     }
 
-    if (avCodecContext->codec_type==AVMEDIA_TYPE_AUDIO){
+    if (avCodecContext->codec_type == AVMEDIA_TYPE_AUDIO) {
         return resample->audioResample(frame);
 
-    } else if (avCodecContext->codec_type==AVMEDIA_TYPE_VIDEO){
+    } else if (avCodecContext->codec_type == AVMEDIA_TYPE_VIDEO) {
         return resample->videoResample(frame);
     }
 
@@ -111,22 +113,21 @@ XData DeCode::receiveFrame() {
 }
 
 
-
 void DeCode::Main() {
-    while (!isExit){
+    while (!isExit) {
         mux.lock();
-        if (pktList.empty()){
+        if (pktList.empty()) {
             mux.unlock();
             continue;
         }
         XData xData = pktList.front();
-        struct SendStatus sendStatus = sendPacket(xData);
-        if (sendStatus.isSuccess){
-            if (!sendStatus.isRetry){
+        SendStatus sendStatus = sendPacket(xData);
+        if (sendStatus.isSuccess) {
+            if (!sendStatus.isRetry) {
                 pktList.pop_front();
             }
             XData framePtk = receiveFrame();
-            if (framePtk.size>0){
+            if (framePtk.size > 0) {
                 Notify(framePtk);
             }
         }
@@ -136,6 +137,9 @@ void DeCode::Main() {
 
 void DeCode::Update(XData data) {
     mux.lock();
-    pktList.push_back(data);
+    if (data.size > 0 && (avCodecContext->codec_type == AVMEDIA_TYPE_AUDIO && data.isAudio) ||
+                          (avCodecContext->codec_type == AVMEDIA_TYPE_VIDEO && !data.isAudio)) {
+        pktList.push_back(data);
+    }
     mux.unlock();
 }

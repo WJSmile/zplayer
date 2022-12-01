@@ -3,6 +3,7 @@
 //
 
 #include "VideoView.h"
+#include "XLog.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -17,7 +18,7 @@ VideoView::VideoView(ANativeWindow *aNativeWindow, int videoWidth, int videoHeig
 
 bool VideoView::setDataToWindow(XData xData) {
 
-    if (ANativeWindow_lock(nativeWindow, &windowBuffer, nullptr) <0) {
+    if (ANativeWindow_lock(nativeWindow, &windowBuffer, nullptr) < 0) {
         return false;
     } else {
         auto *dst = (uint8_t *) windowBuffer.bits;
@@ -34,7 +35,7 @@ bool VideoView::setDataToWindow(XData xData) {
 }
 
 void VideoView::start() {
-   XThread::Start();
+    XThread::Start();
 }
 
 void VideoView::stop() {
@@ -43,25 +44,23 @@ void VideoView::stop() {
 
 void VideoView::Update(XData data) {
     mux.lock();
-    if (!data.isAudio){
-        videoList.push_back(data);
-    }
+    videoList.push_back(data);
     mux.unlock();
 }
 
 void VideoView::Main() {
-    mux.lock();
-    while (!isExit){
-        if (videoList.empty()){
+    while (!isExit) {
+        mux.lock();
+        if (videoList.empty()) {
             mux.unlock();
             continue;
         }
         XData xData = videoList.front();
-        if (!setDataToWindow(xData)){
+        if (setDataToWindow(xData)){
             videoList.pop_back();
         }
+        mux.unlock();
     }
-    mux.unlock();
 }
 
 

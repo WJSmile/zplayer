@@ -1,5 +1,7 @@
 package com.zwj.lib.zplayer
 
+import android.view.Surface
+
 class ZPlayer {
 
     companion object {
@@ -8,4 +10,11 @@ class ZPlayer {
         }
     }
 
+    var playerId: Long = -1
+
+    external fun open(url: String, holder: Surface)
+
+    external fun paused(boolean: Boolean)
+
+    external fun stop()
 }

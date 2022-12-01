@@ -5,7 +5,7 @@
 #ifndef ZPLAYER_PLAYER_H
 #define ZPLAYER_PLAYER_H
 
-#include "XThread.h"
+#include <mutex>
 
 struct ANativeWindow;
 struct Unpacking;
@@ -13,24 +13,21 @@ struct DeCode;
 struct SLAudioPlay;
 struct VideoView;
 
-class Player : public XThread {
+class Player  {
 public:
-    Player(const char *url, ANativeWindow *aNativeWindow);
+    virtual void open(const char *url,ANativeWindow *aNativeWindow);
+
     virtual void paused(bool isPaused);
 
     virtual void stop();
 
 protected:
-    virtual void open();
-    void Main() override;
     Unpacking *unpacking;
     DeCode *audioDeCode;
     DeCode *videoDeCode;
     SLAudioPlay *slAudioPlay;
     VideoView *videoView;
-    const char *url;
-    ANativeWindow *aNativeWindow;
-
+    std::mutex mux;
 };
 
 

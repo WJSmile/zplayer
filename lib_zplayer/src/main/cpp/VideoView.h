@@ -32,6 +32,7 @@ protected:
     ANativeWindow_Buffer windowBuffer{};
 
     std::vector<XData> videoList;
+    std::mutex mux;
 };
 
 

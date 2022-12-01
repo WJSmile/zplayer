@@ -57,22 +57,23 @@ XData Unpacking::readFrame() {
     AVPacket *avPacket = av_packet_alloc();
     int result = av_read_frame(avFormatContext, avPacket);
     if (result != 0) {
-        XLOGE("get avPacket error%s", av_err2str(result));
+        //XLOGE("get avPacket error%s,%d", av_err2str(result),result);
         av_packet_free(&avPacket);
         return {};
     }
     XData xData;
-    xData.data = reinterpret_cast<unsigned char *>(avPacket);
-    xData.size = avPacket->size;
     if (avPacket->stream_index == audioStream) {
+        xData.data = reinterpret_cast<unsigned char *>(avPacket);
+        xData.size = avPacket->size;
         xData.isAudio = true;
     } else if (avPacket->stream_index == videoStream) {
+        xData.data = reinterpret_cast<unsigned char *>(avPacket);
+        xData.size = avPacket->size;
         xData.isAudio = false;
     } else {
         av_packet_free(&avPacket);
         return {};
     }
-    av_packet_free(&avPacket);
     return xData;
 }
 

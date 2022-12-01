@@ -8,20 +8,18 @@
 #include "Resample.h"
 #include "IObserver.h"
 #include "list"
+#include "SendStatus.h"
 
 struct AVCodecParameters;
 struct AVCodecContext;
 struct AVFrame;
-struct SendStatus {
-    bool isSuccess = false;
-    bool isRetry = false;
-} SendStatus;
+
 
 class DeCode : public IObserver {
 public:
     virtual bool open(AVCodecParameters *avCodecParameters, bool isHard = false);
 
-    virtual struct SendStatus sendPacket(XData xData);
+    virtual  SendStatus sendPacket(XData xData);
 
     virtual XData receiveFrame();
 
@@ -35,7 +33,7 @@ protected:
     std::list<XData> pktList;
     AVCodecContext *avCodecContext = nullptr;
     AVFrame *frame = nullptr;
-
+    std::mutex mux;
 };
 
 

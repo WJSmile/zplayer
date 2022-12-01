@@ -20,6 +20,7 @@ public:
     virtual void playCall(void *bufQueue);
 
     virtual void start();
+    virtual void stop();
 
     virtual void paused();
 
@@ -34,6 +35,7 @@ private:
     SLPlayItf slPlayer = nullptr;
     SLAndroidSimpleBufferQueueItf pcmQue = nullptr;
     std::vector<XData> frames;
+    std::mutex mux;
 };
 
 
