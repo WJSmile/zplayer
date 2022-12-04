@@ -7,6 +7,7 @@
 #include "DeCode.h"
 #include "SLAudioPlay.h"
 #include "VideoView.h"
+#include "XLog.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -14,7 +15,7 @@ extern "C" {
 }
 
 
-void Player::open(const char *url,ANativeWindow *aNativeWindow) {
+void Player::open(const char *url) {
     mux.lock();
     unpacking = new Unpacking();
     unpacking->open(url);
@@ -26,18 +27,20 @@ void Player::open(const char *url,ANativeWindow *aNativeWindow) {
     slAudioPlay = new SLAudioPlay();
 
     AVStream *avStreamAudio = unpacking->getAudioParameter();
-    if (!audioDeCode->open(avStreamAudio->codecpar,avStreamAudio->time_base)) {
+    if (!audioDeCode->open(avStreamAudio->codecpar, avStreamAudio->time_base)) {
         mux.unlock();
         return;
     }
-    AVStream *avStreamAudioVideo = unpacking->getVideoParameter();
-    if (!videoDeCode->open(avStreamAudioVideo->codecpar,avStreamAudioVideo->time_base)) {
-        mux.unlock();
-        return;
-    }
-    slAudioPlay->createSL(avStreamAudio->codecpar->ch_layout.nb_channels,avStreamAudio->codecpar->sample_rate);
+    avStreamAudioVideo = unpacking->getVideoParameter();
 
-    videoView = new VideoView(aNativeWindow, avStreamAudioVideo->codecpar->width, avStreamAudioVideo->codecpar->height);
+    if (!videoDeCode->open(avStreamAudioVideo->codecpar, avStreamAudioVideo->time_base, true)) {
+        mux.unlock();
+        return;
+    }
+    slAudioPlay->createSL(avStreamAudio->codecpar->ch_layout.nb_channels,
+                          avStreamAudio->codecpar->sample_rate);
+
+    videoView = new VideoView();
 
     unpacking->AddObs(audioDeCode);
 
@@ -54,6 +57,16 @@ void Player::open(const char *url,ANativeWindow *aNativeWindow) {
     videoView->start();
     mux.unlock();
 
+}
+
+void Player::setWindow(ANativeWindow *aNativeWindow, bool isUseGL) {
+    mux.lock();
+    int windowWidth = ANativeWindow_getWidth(aNativeWindow);
+    int windowHeight = (avStreamAudioVideo->codecpar->height * windowWidth) /
+                       avStreamAudioVideo->codecpar->width;
+    videoDeCode->initVideoResample(avStreamAudioVideo->time_base, isUseGL,windowWidth, windowHeight);
+    videoView->setWindow(aNativeWindow, isUseGL);
+    mux.unlock();
 }
 
 void Player::paused(bool isPaused) {

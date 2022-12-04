@@ -12,7 +12,7 @@ extern "C" {
 #include <libavcodec/jni.h>
 }
 
-bool DeCode::open(AVCodecParameters *avCodecParameters,AVRational timeBase, bool isHard) {
+bool DeCode::open(AVCodecParameters *avCodecParameters, AVRational timeBase, bool isHard) {
 
     const AVCodec *avCodec;
 
@@ -44,16 +44,12 @@ bool DeCode::open(AVCodecParameters *avCodecParameters,AVRational timeBase, bool
     }
     resample = new Resample();
     if (avCodecContext->codec_type == AVMEDIA_TYPE_AUDIO) {
-        resample->initAudioSwrContext(avCodecContext,timeBase);
-        XLOGI("打开音频解码器成功");
-    } else {
-        resample->initVideoSwsContext(avCodecContext,timeBase);
-        XLOGI("打开视频解码器成功");
+        resample->initAudioSwrContext(avCodecContext, timeBase);
     }
     return true;
 }
 
-SendStatus DeCode::sendPacket(XData xData) {
+SendStatus DeCode::sendPacket(const XData xData) {
     SendStatus sendStatus;
     if (xData.size <= 0) {
         sendStatus.isSuccess = false;
@@ -122,12 +118,15 @@ void DeCode::Main() {
         XData xData = pktList.front();
         SendStatus sendStatus = sendPacket(xData);
         if (sendStatus.isSuccess) {
-            if (!sendStatus.isRetry) {
-                pktList.pop_front();
-            }
+
             XData framePtk = receiveFrame();
             if (framePtk.size > 0) {
                 Notify(framePtk);
+            }
+
+            if (!sendStatus.isRetry) {
+                pktList.pop_front();
+                xData.release();
             }
         }
         mux.unlock();
@@ -137,8 +136,14 @@ void DeCode::Main() {
 void DeCode::Update(XData data) {
     mux.lock();
     if (data.size > 0 && (avCodecContext->codec_type == AVMEDIA_TYPE_AUDIO && data.isAudio) ||
-                          (avCodecContext->codec_type == AVMEDIA_TYPE_VIDEO && !data.isAudio)) {
+        (avCodecContext->codec_type == AVMEDIA_TYPE_VIDEO && !data.isAudio)) {
         pktList.push_back(data);
     }
     mux.unlock();
+}
+
+void DeCode::initVideoResample(AVRational timeBase, bool isUseGL, int videoWidth, int videoHeight) {
+    if (resample) {
+        resample->initVideoSwsContext(avCodecContext, timeBase, isUseGL,videoWidth, videoHeight);
+    }
 }

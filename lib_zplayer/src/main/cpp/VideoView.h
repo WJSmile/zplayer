@@ -13,17 +13,18 @@
 extern "C" {
 #include <android/native_window_jni.h>
 }
-
+class XTexture;
 
 class VideoView : public IObserver {
 public:
-    VideoView(ANativeWindow *aNativeWindow, int videoWidth, int videoHeight);
-
+    virtual void setWindow(ANativeWindow *aNativeWindow,bool isUseGL);
     virtual void start();
 
     virtual void stop();
 
     virtual bool setDataToWindow(XData xData);
+
+    virtual bool setDataToWindowFormGL(XData xData);
 
     virtual void setVideoCallback(VideoCallback *callback);
 
@@ -31,13 +32,19 @@ protected:
     void Update(XData data) override;
 
     void Main() override;
+    volatile void synTime(XData xData);
 
-    ANativeWindow *nativeWindow;
+    long long nowTime= 0;
+    ANativeWindow *nativeWindow = nullptr;
+    bool isUseGL = false;
 
     ANativeWindow_Buffer windowBuffer{};
 
     VideoCallback *videoCallback = 0;
+    int windowWidth;
+    int windowHeight;
 
+    XTexture *xTexture = nullptr;
     std::list<XData> videoList;
     std::mutex mux;
 };

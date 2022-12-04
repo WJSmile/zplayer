@@ -110,4 +110,5 @@ target_link_libraries(
         postproc
         android
         OpenSLES
+        GLESv2 EGL
         ${log-lib})

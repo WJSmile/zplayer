@@ -4,6 +4,13 @@
 
 #include "SLAudioPlay.h"
 #include "XLog.h"
+
+
+extern "C" {
+#include <libavutil/time.h>
+#include "libavutil/samplefmt.h"
+}
+
 SLAudioPlay::SLAudioPlay() {
     buf = new unsigned char[1024 * 1024];
 }
@@ -18,8 +25,13 @@ void SLAudioPlay::playCall(void *bufQueue) {
         return;
     }
     mux.lock();
+    if (!buf) {
+        mux.unlock();
+        return;
+    }
     if (audioList.empty()) {
         XLOGE("audio frames size is 0");
+        (*pcmQue)->Enqueue(pcmQue, "", 1);
         mux.unlock();
         return;
     }
@@ -27,20 +39,18 @@ void SLAudioPlay::playCall(void *bufQueue) {
     audioList.pop_front();
     if (xData.size == 0) {
         XLOGE("audioFrame size is 0");
+        (*pcmQue)->Enqueue(pcmQue, "", 1);
+        xData.release();
         mux.unlock();
         return;
     }
-    if (!buf) {
-        mux.unlock();
-        return;
-    }
-    pts = xData.pts;
+    mux.unlock();
     memcpy(buf, xData.data, xData.size);
+    setTimes(xData);
     if (pcmQue && (*pcmQue)) {
         (*pcmQue)->Enqueue(pcmQue, buf, xData.size);
     }
-    mux.unlock();
-
+    xData.release();
 }
 
 void PcmCall(SLAndroidSimpleBufferQueueItf bf, void *context) {
@@ -54,6 +64,8 @@ void PcmCall(SLAndroidSimpleBufferQueueItf bf, void *context) {
 
 bool SLAudioPlay::createSL(int channels, int sample_rate) {
 
+    //播放音屏固定为16位也就是2byte所以乘以2
+    audioSize = channels * sample_rate * av_get_bytes_per_sample(AV_SAMPLE_FMT_S16);
     SLresult re;
     re = slCreateEngine(&engineSL, 0, nullptr, 0, nullptr, nullptr);
     if (re != SL_RESULT_SUCCESS) return false;
@@ -150,7 +162,26 @@ void SLAudioPlay::Update(XData data) {
 }
 
 double SLAudioPlay::getPlayTime() {
+    timesMux.lock();
+    if (audioTime != 0 && audioPlaySize != 0 && pts != 0) {
+        //已播放的大小
+        double size = (((double) (av_gettime() - audioTime) / 1000000.0) * audioSize);
+        if (size < audioPlaySize) {
+            double time = pts - (audioPlaySize - size) / audioSize;
+            timesMux.unlock();
+            return time;
+        }
+    }
+    timesMux.unlock();
     return pts;
+}
+
+void SLAudioPlay::setTimes(XData xData) {
+    timesMux.lock();
+    pts = xData.pts;
+    audioPlaySize = xData.size;
+    audioTime = av_gettime();
+    timesMux.unlock();
 }
 
 

@@ -26,13 +26,18 @@ public:
 
     virtual void paused();
 
+    virtual void setTimes(XData xData);
+
     virtual double getPlayTime();
-    double pts = 0;
 protected:
     void Update(XData data) override;
 
 private:
-
+    double pts = 0;
+    long long audioTime = 0;
+    //每秒播放音屏大小
+    long audioSize = 0;
+    int audioPlaySize = 0;
     unsigned char *buf = 0;
     SLObjectItf engineSL = nullptr;
     SLEngineItf eng = nullptr;
@@ -42,6 +47,7 @@ private:
     SLAndroidSimpleBufferQueueItf pcmQue = nullptr;
     std::list<XData> audioList;
     std::mutex mux;
+    std::mutex timesMux;
 };
 
 

@@ -22,9 +22,10 @@ class DeCode : public IObserver {
 public:
     virtual bool open(AVCodecParameters *avCodecParameters,AVRational timeBase ,bool isHard = false);
 
-    virtual  SendStatus sendPacket(XData xData);
+    virtual  SendStatus sendPacket(const XData xData);
 
     virtual XData receiveFrame();
+    virtual void initVideoResample(AVRational timeBase,bool isUseGL,int videoWidth, int videoHeight);
 
 
 protected:

@@ -13,12 +13,13 @@ class ZSurfaceView @JvmOverloads constructor(
 
     init {
         holder.addCallback(this)
+        Thread{
+            zPlayer.open("https://stream7.iqilu.com/10339/upload_transcode/202002/18/20200218025702PSiVKDB5ap.mp4")
+        }.start()
     }
 
     override fun surfaceCreated(holder: SurfaceHolder) {
-        Thread{
-            zPlayer.open("http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4",holder.surface)
-        }.start()
+        zPlayer.setHolder(holder.surface,false)
     }
 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {

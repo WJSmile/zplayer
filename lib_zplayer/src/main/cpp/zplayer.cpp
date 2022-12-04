@@ -8,6 +8,8 @@ extern "C" {
 #include <android/native_window_jni.h>
 #include <libavcodec/jni.h>
 }
+
+std::mutex mux;
 extern "C"
 JNIEXPORT
 jint JNI_OnLoad(JavaVM *vm, void *res) {
@@ -50,29 +52,49 @@ void setDistinguishFromObj(JNIEnv *env, jobject obj, jlong jlong1) {
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_zwj_lib_zplayer_ZPlayer_open(JNIEnv *env, jobject thiz, jstring url, jobject holder) {
+Java_com_zwj_lib_zplayer_ZPlayer_open(JNIEnv *env, jobject thiz, jstring url) {
+    mux.lock();
     Player *player = getDistinguishFromObj(env, thiz);
     if (player == nullptr) {
         player = new Player();
         setDistinguishFromObj(env, thiz, reinterpret_cast<jlong>(player));
     }
-    player->open(env->GetStringUTFChars(url, nullptr), ANativeWindow_fromSurface(env, holder));
+    player->open(env->GetStringUTFChars(url, nullptr));
+    mux.unlock();
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_zwj_lib_zplayer_ZPlayer_setHolder(JNIEnv *env, jobject thiz, jobject holder,
+                                           jboolean is_use_gl) {
+    mux.lock();
+    Player *player = getDistinguishFromObj(env, thiz);
+    if (player == nullptr) {
+        player = new Player();
+        setDistinguishFromObj(env, thiz, reinterpret_cast<jlong>(player));
+    }
+    player->setWindow(ANativeWindow_fromSurface(env, holder),is_use_gl);
+    mux.unlock();
 }
 
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_zwj_lib_zplayer_ZPlayer_paused(JNIEnv *env, jobject thiz, jboolean boolean) {
+    mux.lock();
     Player *player = getDistinguishFromObj(env, thiz);
     if (player != nullptr) {
         player->paused(boolean);
     }
+    mux.unlock();
 }
 
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_zwj_lib_zplayer_ZPlayer_stop(JNIEnv *env, jobject thiz) {
+    mux.lock();
     Player *player = getDistinguishFromObj(env, thiz);
     if (player != nullptr) {
         player->stop();
     }
+    mux.unlock();
 }

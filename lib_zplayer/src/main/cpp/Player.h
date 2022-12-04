@@ -13,11 +13,13 @@ struct Unpacking;
 struct DeCode;
 struct SLAudioPlay;
 struct VideoView;
+struct AVStream;
 
 class Player : public VideoCallback {
 public:
-    virtual void open(const char *url, ANativeWindow *aNativeWindow);
+    virtual void open(const char *url);
 
+    virtual void setWindow(ANativeWindow *aNativeWindow,bool isUseGL);
     virtual void paused(bool isPaused);
 
     virtual void stop();
@@ -30,6 +32,7 @@ protected:
     DeCode *videoDeCode;
     SLAudioPlay *slAudioPlay;
     VideoView *videoView;
+    AVStream *avStreamAudioVideo;
     std::mutex mux;
 };
 

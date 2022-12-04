@@ -56,7 +56,6 @@ XData Unpacking::readFrame() {
     AVPacket *avPacket = av_packet_alloc();
     int result = av_read_frame(avFormatContext, avPacket);
     if (result != 0) {
-        //XLOGE("get avPacket error%s,%d", av_err2str(result),result);
         av_packet_free(&avPacket);
         return {};
     }
@@ -64,8 +63,10 @@ XData Unpacking::readFrame() {
     if (avPacket->stream_index == audioStream) {
         xData.data = reinterpret_cast<unsigned char *>(avPacket);
         xData.size = avPacket->size;
+        xData.type = AV_PACK_TYPE;
         xData.isAudio = true;
     } else if (avPacket->stream_index == videoStream) {
+        xData.type = AV_PACK_TYPE;
         xData.data = reinterpret_cast<unsigned char *>(avPacket);
         xData.size = avPacket->size;
         xData.isAudio = false;
