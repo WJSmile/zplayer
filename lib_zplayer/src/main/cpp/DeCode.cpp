@@ -8,18 +8,64 @@
 
 extern "C" {
 #include <libavcodec/avcodec.h>
-#include <libswscale/swscale.h>
+#include <libavcodec/mediacodec.h>
 #include <libavcodec/jni.h>
 }
 
-bool DeCode::open(AVCodecParameters *avCodecParameters, AVRational timeBase, bool isHard) {
+AVBufferRef *hw_device_ctx = nullptr;
+enum AVPixelFormat hw_pix_fmt;
+enum AVHWDeviceType type;
 
+static int hw_decoder_init(AVCodecContext *ctx, const enum AVHWDeviceType type) {
+    int err = 0;
+
+    if ((err = av_hwdevice_ctx_create(&hw_device_ctx, type,
+                                      nullptr, nullptr, 0)) < 0) {
+        fprintf(stderr, "Failed to create specified HW device.\n");
+        return err;
+    }
+    ctx->hw_device_ctx = av_buffer_ref(hw_device_ctx);
+
+    return err;
+}
+
+static enum AVPixelFormat get_hw_format(AVCodecContext *ctx,
+                                        const enum AVPixelFormat *pix_fmts) {
+    const enum AVPixelFormat *p;
+
+    for (p = pix_fmts; *p != -1; p++) {
+        if (*p == hw_pix_fmt)
+            return *p;
+    }
+
+    fprintf(stderr, "Failed to get HW surface format.\n");
+    return AV_PIX_FMT_NONE;
+}
+
+
+bool
+DeCode::open(AVCodecParameters *avCodecParameters, AVRational timeBase, jobject holder, bool isHard,
+             bool isUseGL, int videoWidth, int videoHeight) {
+    this->isHard = isHard;
     const AVCodec *avCodec;
-
     if (isHard) {
         switch (avCodecParameters->codec_id) {
             case AV_CODEC_ID_H264:
                 avCodec = avcodec_find_decoder_by_name("h264_mediacodec");
+                type = av_hwdevice_find_type_by_name("mediacodec");
+                for (int i = 0;; i++) {
+                    const AVCodecHWConfig *config = avcodec_get_hw_config(avCodec, i);
+                    if (!config) {
+                        fprintf(stderr, "Decoder %s does not support device type %s.\n",
+                                avCodec->name, av_hwdevice_get_type_name(type));
+                        return -1;
+                    }
+                    if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX &&
+                        config->device_type == type) {
+                        hw_pix_fmt = config->pix_fmt;
+                        break;
+                    }
+                }
                 break;
             default:
                 avCodec = avcodec_find_decoder(avCodecParameters->codec_id);
@@ -35,7 +81,14 @@ bool DeCode::open(AVCodecParameters *avCodecParameters, AVRational timeBase, boo
 
     avCodecContext = avcodec_alloc_context3(avCodec);
     avcodec_parameters_to_context(avCodecContext, avCodecParameters);
-    avCodecContext->thread_count = 8;
+    if (isHard) {
+        avCodecContext->get_format = get_hw_format;
+        if (hw_decoder_init(avCodecContext, type) < 0){
+            return false;
+        }
+        AVMediaCodecContext *mediaCodecContext = av_mediacodec_alloc_context();
+        av_mediacodec_default_init(avCodecContext, mediaCodecContext, holder);
+    }
     int re = avcodec_open2(avCodecContext, avCodec, nullptr);
 
     if (re != 0) {
@@ -45,6 +98,9 @@ bool DeCode::open(AVCodecParameters *avCodecParameters, AVRational timeBase, boo
     resample = new Resample();
     if (avCodecContext->codec_type == AVMEDIA_TYPE_AUDIO) {
         resample->initAudioSwrContext(avCodecContext, timeBase);
+    }
+    if (avCodecContext->codec_type == AVMEDIA_TYPE_VIDEO && !isHard){
+        resample->initVideoSwsContext(avCodecContext, timeBase, isUseGL, videoWidth, videoHeight);
     }
     return true;
 }
@@ -89,19 +145,28 @@ XData DeCode::receiveFrame() {
     if (!avCodecContext) {
         return {};
     }
-    if (!frame) {
+    if (isHard){
         frame = av_frame_alloc();
-    }
-    int re = avcodec_receive_frame(avCodecContext, frame);
-    if (re != 0) {
-        return {};
-    }
-
-    if (avCodecContext->codec_type == AVMEDIA_TYPE_AUDIO) {
-        return resample->audioResample(frame);
-
-    } else if (avCodecContext->codec_type == AVMEDIA_TYPE_VIDEO) {
+        int re = avcodec_receive_frame(avCodecContext, frame);
+        if (re != 0) {
+            return {};
+        }
         return resample->videoResample(frame);
+    } else{
+        if (!frame) {
+            frame = av_frame_alloc();
+        }
+        int re = avcodec_receive_frame(avCodecContext, frame);
+        if (re != 0) {
+            return {};
+        }
+
+        if (avCodecContext->codec_type == AVMEDIA_TYPE_AUDIO) {
+            return resample->audioResample(frame);
+
+        } else if (avCodecContext->codec_type == AVMEDIA_TYPE_VIDEO) {
+            return resample->videoResample(frame);
+        }
     }
 
     return {};
@@ -142,8 +207,3 @@ void DeCode::Update(XData data) {
     mux.unlock();
 }
 
-void DeCode::initVideoResample(AVRational timeBase, bool isUseGL, int videoWidth, int videoHeight) {
-    if (resample) {
-        resample->initVideoSwsContext(avCodecContext, timeBase, isUseGL,videoWidth, videoHeight);
-    }
-}

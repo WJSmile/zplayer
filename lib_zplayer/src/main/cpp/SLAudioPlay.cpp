@@ -30,7 +30,7 @@ void SLAudioPlay::playCall(void *bufQueue) {
         return;
     }
     if (audioList.empty()) {
-        XLOGE("audio frames size is 0");
+       // XLOGE("audio frames size is 0");
         (*pcmQue)->Enqueue(pcmQue, "", 1);
         mux.unlock();
         return;

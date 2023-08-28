@@ -6,13 +6,15 @@
 #include "XLog.h"
 #include "XTexture.h"
 
+
 extern "C" {
+#include "libavcodec/mediacodec.h"
 #include <libavcodec/avcodec.h>
 #include <libavutil/time.h>
 }
 
 
-void VideoView::setWindow(ANativeWindow *aNativeWindow, bool isUseGL) {
+void VideoView::setWindow(ANativeWindow *aNativeWindow, bool isUseGL,bool isHard) {
 
     windowWidth = ANativeWindow_getWidth(aNativeWindow);
     windowHeight = ANativeWindow_getHeight(aNativeWindow);
@@ -20,6 +22,7 @@ void VideoView::setWindow(ANativeWindow *aNativeWindow, bool isUseGL) {
                                      WINDOW_FORMAT_RGBA_8888);
     nativeWindow = aNativeWindow;
     this->isUseGL = isUseGL;
+    this->isHard = isHard;
 }
 
 
@@ -63,6 +66,22 @@ bool VideoView::setDataToWindowFormGL(XData xData) {
     nowTime = av_gettime();
     return true;
 }
+
+bool VideoView::setDataToSurface(XData xData) {
+    auto *buffer = (AVMediaCodecBuffer *) (((AVFrame *) xData.data)->data[3]);
+    // 渲染
+    int  re = av_mediacodec_release_buffer(buffer, 1);
+
+    if (re!=0){
+        return true;
+    }
+
+    synTime(xData);
+    nowTime = av_gettime();
+    return true;
+}
+
+
 volatile void VideoView::synTime(XData xData) {
     if (videoCallback) {
         double codeTimeConsuming = ((double) (av_gettime() - nowTime)) / 1000000.0;
@@ -103,18 +122,24 @@ void VideoView::Main() {
             continue;
         }
         XData xData = videoList.front();
-        if (isUseGL) {
-            if (setDataToWindowFormGL(xData)) {
+        if (isHard){
+            if (setDataToSurface(xData)) {
                 videoList.pop_front();
                 xData.release();
             }
-        } else {
-            if (setDataToWindow(xData)) {
-                videoList.pop_front();
-                xData.release();
+        } else{
+            if (isUseGL) {
+                if (setDataToWindowFormGL(xData)) {
+                    videoList.pop_front();
+                    xData.release();
+                }
+            } else {
+                if (setDataToWindow(xData)) {
+                    videoList.pop_front();
+                    xData.release();
+                }
             }
         }
-
         mux.unlock();
     }
 }
@@ -122,6 +147,7 @@ void VideoView::Main() {
 void VideoView::setVideoCallback(VideoCallback *callback) {
     this->videoCallback = callback;
 }
+
 
 
 

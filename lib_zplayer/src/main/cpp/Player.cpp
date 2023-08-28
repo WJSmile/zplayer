@@ -15,7 +15,7 @@ extern "C" {
 }
 
 
-void Player::open(const char *url) {
+void Player::open(const char *url,jobject holder,ANativeWindow *aNativeWindow,bool isUseGL) {
     mux.lock();
     unpacking = new Unpacking();
     unpacking->open(url);
@@ -33,7 +33,12 @@ void Player::open(const char *url) {
     }
     avStreamAudioVideo = unpacking->getVideoParameter();
 
-    if (!videoDeCode->open(avStreamAudioVideo->codecpar, avStreamAudioVideo->time_base, true)) {
+    int videoWidth = ANativeWindow_getWidth(aNativeWindow);
+    int videoHeight = (avStreamAudioVideo->codecpar->height * videoWidth) /
+                       avStreamAudioVideo->codecpar->width;
+
+    if (!videoDeCode->open(avStreamAudioVideo->codecpar, avStreamAudioVideo->time_base, holder,
+                           true,isUseGL,videoWidth,videoHeight)) {
         mux.unlock();
         return;
     }
@@ -41,6 +46,8 @@ void Player::open(const char *url) {
                           avStreamAudio->codecpar->sample_rate);
 
     videoView = new VideoView();
+
+    videoView->setWindow(aNativeWindow, isUseGL, true);
 
     unpacking->AddObs(audioDeCode);
 
@@ -59,15 +66,7 @@ void Player::open(const char *url) {
 
 }
 
-void Player::setWindow(ANativeWindow *aNativeWindow, bool isUseGL) {
-    mux.lock();
-    int windowWidth = ANativeWindow_getWidth(aNativeWindow);
-    int windowHeight = (avStreamAudioVideo->codecpar->height * windowWidth) /
-                       avStreamAudioVideo->codecpar->width;
-    videoDeCode->initVideoResample(avStreamAudioVideo->time_base, isUseGL,windowWidth, windowHeight);
-    videoView->setWindow(aNativeWindow, isUseGL);
-    mux.unlock();
-}
+
 
 void Player::paused(bool isPaused) {
 

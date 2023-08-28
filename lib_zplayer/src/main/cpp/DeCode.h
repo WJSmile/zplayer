@@ -5,6 +5,7 @@
 #ifndef ZPLAYER_DECODE_H
 #define ZPLAYER_DECODE_H
 
+#include <jni.h>
 #include "Resample.h"
 #include "IObserver.h"
 #include "list"
@@ -20,12 +21,11 @@ struct AVFrame;
 
 class DeCode : public IObserver {
 public:
-    virtual bool open(AVCodecParameters *avCodecParameters,AVRational timeBase ,bool isHard = false);
+    virtual bool open(AVCodecParameters *avCodecParameters,AVRational timeBase ,jobject holder= nullptr,bool isHard = false,bool isUseGL= false, int videoWidth =0, int videoHeight=0);
 
     virtual  SendStatus sendPacket(const XData xData);
 
     virtual XData receiveFrame();
-    virtual void initVideoResample(AVRational timeBase,bool isUseGL,int videoWidth, int videoHeight);
 
 
 protected:
@@ -37,6 +37,7 @@ protected:
     std::list<XData> pktList;
     AVCodecContext *avCodecContext = nullptr;
     AVFrame *frame = nullptr;
+    bool isHard = false;
     std::mutex mux;
 };
 

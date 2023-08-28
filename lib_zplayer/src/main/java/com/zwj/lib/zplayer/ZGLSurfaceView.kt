@@ -15,13 +15,13 @@ class ZGLSurfaceView @JvmOverloads constructor(
 
     init {
         setRenderer(this)
-        Thread {
-            zPlayer.open("https://stream7.iqilu.com/10339/upload_transcode/202002/18/20200218025702PSiVKDB5ap.mp4")
-        }.start()
+
     }
 
     override fun surfaceCreated(holder: SurfaceHolder) {
-        zPlayer.setHolder(holder.surface, true)
+        Thread {
+            zPlayer.open("https://stream7.iqilu.com/10339/upload_transcode/202002/18/20200218025702PSiVKDB5ap.mp4",holder.surface, true)
+        }.start()
     }
 
     override fun onSurfaceCreated(p0: GL10?, p1: EGLConfig?) {

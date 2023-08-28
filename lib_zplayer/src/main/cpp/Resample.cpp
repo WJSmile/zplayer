@@ -84,6 +84,20 @@ XData Resample::audioResample(AVFrame *frame) {
 
 XData Resample::videoResample(AVFrame *frame) {
     mux.lock();
+    if (frame->format==AV_PIX_FMT_MEDIACODEC){
+
+        XData xData;
+        xData.pts = av_q2d(videoTimeBase) * (double) frame->pts;
+        xData.isAudio = false;
+        xData.type = AV_FRAME_TYPE;
+        xData.videoExtraDelay = frame->repeat_pict / (2.0 * (1.0 / av_q2d(videoTimeBase)));
+        xData.data = reinterpret_cast<unsigned char *>(frame);
+        xData.size = sizeof(frame->data[3]);
+        xData.width = frame->width;
+        xData.height = frame->height;
+        mux.unlock();
+        return xData;
+    }
     if (!videoSwsContext) {
         mux.unlock();
         return {};

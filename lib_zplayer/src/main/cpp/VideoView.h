@@ -17,7 +17,7 @@ class XTexture;
 
 class VideoView : public IObserver {
 public:
-    virtual void setWindow(ANativeWindow *aNativeWindow,bool isUseGL);
+    virtual void setWindow(ANativeWindow *aNativeWindow,bool isUseGL,bool isHard);
     virtual void start();
 
     virtual void stop();
@@ -25,6 +25,7 @@ public:
     virtual bool setDataToWindow(XData xData);
 
     virtual bool setDataToWindowFormGL(XData xData);
+    virtual bool setDataToSurface(XData xData);
 
     virtual void setVideoCallback(VideoCallback *callback);
 
@@ -37,6 +38,7 @@ protected:
     long long nowTime= 0;
     ANativeWindow *nativeWindow = nullptr;
     bool isUseGL = false;
+    bool isHard = false;
 
     ANativeWindow_Buffer windowBuffer{};
 

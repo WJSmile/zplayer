@@ -2,6 +2,7 @@ package com.zwj.lib.zplayer
 
 import android.content.Context
 import android.util.AttributeSet
+import android.util.Log
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 
@@ -13,13 +14,13 @@ class ZSurfaceView @JvmOverloads constructor(
 
     init {
         holder.addCallback(this)
-        Thread{
-            zPlayer.open("https://stream7.iqilu.com/10339/upload_transcode/202002/18/20200218025702PSiVKDB5ap.mp4")
-        }.start()
     }
 
     override fun surfaceCreated(holder: SurfaceHolder) {
-        zPlayer.setHolder(holder.surface,false)
+        holder.setFixedSize(100,100)
+        Thread{
+            zPlayer.open("https://stream7.iqilu.com/10339/upload_transcode/202002/18/20200218025702PSiVKDB5ap.mp4",holder.surface,false)
+        }.start()
     }
 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {

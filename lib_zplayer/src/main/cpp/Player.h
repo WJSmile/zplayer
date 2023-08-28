@@ -6,6 +6,7 @@
 #define ZPLAYER_PLAYER_H
 
 #include <mutex>
+#include <jni.h>
 #include "VideoCallback.h"
 
 struct ANativeWindow;
@@ -17,9 +18,8 @@ struct AVStream;
 
 class Player : public VideoCallback {
 public:
-    virtual void open(const char *url);
+    virtual void open(const char *url,jobject holder,ANativeWindow *aNativeWindow,bool isUseGL);
 
-    virtual void setWindow(ANativeWindow *aNativeWindow,bool isUseGL);
     virtual void paused(bool isPaused);
 
     virtual void stop();

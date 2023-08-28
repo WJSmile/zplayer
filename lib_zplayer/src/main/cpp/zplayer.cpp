@@ -52,30 +52,19 @@ void setDistinguishFromObj(JNIEnv *env, jobject obj, jlong jlong1) {
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_zwj_lib_zplayer_ZPlayer_open(JNIEnv *env, jobject thiz, jstring url) {
+Java_com_zwj_lib_zplayer_ZPlayer_open(JNIEnv *env, jobject thiz, jstring url,jobject holder,
+                                      jboolean is_use_gl) {
     mux.lock();
     Player *player = getDistinguishFromObj(env, thiz);
     if (player == nullptr) {
         player = new Player();
         setDistinguishFromObj(env, thiz, reinterpret_cast<jlong>(player));
     }
-    player->open(env->GetStringUTFChars(url, nullptr));
+    player->open(env->GetStringUTFChars(url, nullptr),holder,ANativeWindow_fromSurface(env, holder),is_use_gl);
     mux.unlock();
 }
 
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_zwj_lib_zplayer_ZPlayer_setHolder(JNIEnv *env, jobject thiz, jobject holder,
-                                           jboolean is_use_gl) {
-    mux.lock();
-    Player *player = getDistinguishFromObj(env, thiz);
-    if (player == nullptr) {
-        player = new Player();
-        setDistinguishFromObj(env, thiz, reinterpret_cast<jlong>(player));
-    }
-    player->setWindow(ANativeWindow_fromSurface(env, holder),is_use_gl);
-    mux.unlock();
-}
+
 
 extern "C"
 JNIEXPORT void JNICALL
