@@ -23,6 +23,7 @@ public:
     virtual void paused(bool isPaused);
 
     virtual void stop();
+    virtual void setOnProgressListen(JNIEnv *env,jobject on_progress_listen);
 
 protected:
     double getAudioTime() override;

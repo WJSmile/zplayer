@@ -21,6 +21,8 @@ public:
     virtual AVStream *getAudioParameter();
 
     virtual AVStream *getVideoParameter();
+
+    virtual double getDuration();
 private:
     virtual XData readFrame();
     AVFormatContext *avFormatContext = nullptr;

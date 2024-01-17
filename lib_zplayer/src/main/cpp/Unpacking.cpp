@@ -85,6 +85,10 @@ void Unpacking::Main() {
         }
     }
 }
+//返回毫秒
+double Unpacking::getDuration() {
+    return ((double)avFormatContext->duration)/1000.0;
+}
 
 
 

@@ -17,4 +17,6 @@ class ZPlayer {
     external fun paused(boolean: Boolean)
 
     external fun stop()
+
+    external fun setOnProgressListen(onProgressListen: OnProgressListen)
 }

@@ -14,7 +14,7 @@ extern "C" {
 }
 
 
-void VideoView::setWindow(ANativeWindow *aNativeWindow, bool isUseGL,bool isHard) {
+void VideoView::setWindow(ANativeWindow *aNativeWindow, bool isUseGL, bool isHard) {
 
     windowWidth = ANativeWindow_getWidth(aNativeWindow);
     windowHeight = ANativeWindow_getHeight(aNativeWindow);
@@ -59,7 +59,7 @@ bool VideoView::setDataToWindowFormGL(XData xData) {
     }
     if (!xTexture) {
         xTexture = XTexture::Create();
-        xTexture->Init(xData.width,xData.height,nativeWindow, (XTextureType) xData.format);
+        xTexture->Init(xData.width, xData.height, nativeWindow, (XTextureType) xData.format);
     }
     xTexture->Draw(((AVFrame *) xData.data)->data, xData.width, xData.height);
     synTime(xData);
@@ -70,9 +70,9 @@ bool VideoView::setDataToWindowFormGL(XData xData) {
 bool VideoView::setDataToSurface(XData xData) {
     auto *buffer = (AVMediaCodecBuffer *) (((AVFrame *) xData.data)->data[3]);
     // 渲染
-    int  re = av_mediacodec_release_buffer(buffer, 1);
+    int re = av_mediacodec_release_buffer(buffer, 1);
 
-    if (re!=0){
+    if (re != 0) {
         return true;
     }
 
@@ -88,6 +88,7 @@ volatile void VideoView::synTime(XData xData) {
         double time = videoCallback->getAudioTime();
         double pts = xData.pts - codeTimeConsuming;
         double videoExtraDelay = xData.videoExtraDelay - codeTimeConsuming;
+        setProgress(time * 1000);
         if (time < pts) {
             double sleepTime = pts - time;
             if (videoExtraDelay > sleepTime) {
@@ -122,12 +123,12 @@ void VideoView::Main() {
             continue;
         }
         XData xData = videoList.front();
-        if (isHard){
+        if (isHard) {
             if (setDataToSurface(xData)) {
                 videoList.pop_front();
                 xData.release();
             }
-        } else{
+        } else {
             if (isUseGL) {
                 if (setDataToWindowFormGL(xData)) {
                     videoList.pop_front();
@@ -146,6 +147,25 @@ void VideoView::Main() {
 
 void VideoView::setVideoCallback(VideoCallback *callback) {
     this->videoCallback = callback;
+}
+
+void VideoView::setOnProgressListen(JNIEnv *jniEnv, jobject on_progress_listen, double duration) {
+    onProgressListen = on_progress_listen;
+    env = jniEnv;
+    durationTime = duration;
+    jclass clazz = jniEnv->GetObjectClass(on_progress_listen);
+    jmethodID jId = jniEnv->GetMethodID(clazz, "onProgress", "(II)V");
+    jniEnv->CallVoidMethod(on_progress_listen, jId, duration,0);
+}
+
+void VideoView::setProgress(double audioTime) {
+    if (onProgressListen != nullptr  && env!= nullptr) {
+        jclass clazz = env->GetObjectClass(onProgressListen);
+       // jmethodID jId = env->GetMethodID(clazz, "onProgress", "(II)V");
+       // env->CallVoidMethod(onProgressListen, jId, durationTime,audioTime);
+       // jclass  jclass1 = env->FindClass("com/zwj/lib/zplayer/OnProgressListen");
+        //env->GetMethodID(jclass1,"onProgress", "(II)V");
+    }
 }
 
 

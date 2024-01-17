@@ -15,7 +15,7 @@ extern "C" {
 }
 
 
-void Player::open(const char *url,jobject holder,ANativeWindow *aNativeWindow,bool isUseGL) {
+void Player::open(const char *url, jobject holder, ANativeWindow *aNativeWindow, bool isUseGL) {
     mux.lock();
     unpacking = new Unpacking();
     unpacking->open(url);
@@ -35,10 +35,10 @@ void Player::open(const char *url,jobject holder,ANativeWindow *aNativeWindow,bo
 
     int videoWidth = ANativeWindow_getWidth(aNativeWindow);
     int videoHeight = (avStreamAudioVideo->codecpar->height * videoWidth) /
-                       avStreamAudioVideo->codecpar->width;
+                      avStreamAudioVideo->codecpar->width;
 
     if (!videoDeCode->open(avStreamAudioVideo->codecpar, avStreamAudioVideo->time_base, holder,
-                           true,isUseGL,videoWidth,videoHeight)) {
+                           true, isUseGL, videoWidth, videoHeight)) {
         mux.unlock();
         return;
     }
@@ -65,7 +65,6 @@ void Player::open(const char *url,jobject holder,ANativeWindow *aNativeWindow,bo
     mux.unlock();
 
 }
-
 
 
 void Player::paused(bool isPaused) {
@@ -95,6 +94,14 @@ void Player::stop() {
 double Player::getAudioTime() {
     return slAudioPlay->getPlayTime();
 }
+
+void Player::setOnProgressListen(JNIEnv *env, jobject on_progress_listen) {
+    if (videoView != nullptr && unpacking != nullptr) {
+        videoView->setOnProgressListen(env,on_progress_listen, unpacking->getDuration());
+    }
+}
+
+
 
 
 

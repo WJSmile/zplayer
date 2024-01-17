@@ -17,10 +17,17 @@ class ZSurfaceView @JvmOverloads constructor(
     }
 
     override fun surfaceCreated(holder: SurfaceHolder) {
-        holder.setFixedSize(100,100)
         Thread{
             zPlayer.open("https://stream7.iqilu.com/10339/upload_transcode/202002/18/20200218025702PSiVKDB5ap.mp4",holder.surface,false)
+
+            zPlayer.setOnProgressListen { totalDuration, duration ->
+                Log.e(
+                    ">>>>>",
+                    "$totalDuration>>>$duration"
+                )
+            }
         }.start()
+
     }
 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {

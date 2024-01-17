@@ -99,7 +99,7 @@ DeCode::open(AVCodecParameters *avCodecParameters, AVRational timeBase, jobject 
     if (avCodecContext->codec_type == AVMEDIA_TYPE_AUDIO) {
         resample->initAudioSwrContext(avCodecContext, timeBase);
     }
-    if (avCodecContext->codec_type == AVMEDIA_TYPE_VIDEO && !isHard){
+    if (avCodecContext->codec_type == AVMEDIA_TYPE_VIDEO){
         resample->initVideoSwsContext(avCodecContext, timeBase, isUseGL, videoWidth, videoHeight);
     }
     return true;

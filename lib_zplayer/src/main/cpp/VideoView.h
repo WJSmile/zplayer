@@ -29,11 +29,14 @@ public:
 
     virtual void setVideoCallback(VideoCallback *callback);
 
+    virtual void setOnProgressListen(JNIEnv *jniEnv,jobject on_progress_listen,double duration);
+
 protected:
     void Update(XData data) override;
 
     void Main() override;
     volatile void synTime(XData xData);
+    virtual void setProgress(double audioTime);
 
     long long nowTime= 0;
     ANativeWindow *nativeWindow = nullptr;
@@ -49,6 +52,9 @@ protected:
     XTexture *xTexture = nullptr;
     std::list<XData> videoList;
     std::mutex mux;
+    jobject onProgressListen = nullptr;
+    double durationTime;
+    JNIEnv *env = nullptr;
 };
 
 

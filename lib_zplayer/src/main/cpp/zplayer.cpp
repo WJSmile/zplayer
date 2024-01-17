@@ -52,7 +52,7 @@ void setDistinguishFromObj(JNIEnv *env, jobject obj, jlong jlong1) {
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_zwj_lib_zplayer_ZPlayer_open(JNIEnv *env, jobject thiz, jstring url,jobject holder,
+Java_com_zwj_lib_zplayer_ZPlayer_open(JNIEnv *env, jobject thiz, jstring url, jobject holder,
                                       jboolean is_use_gl) {
     mux.lock();
     Player *player = getDistinguishFromObj(env, thiz);
@@ -60,7 +60,8 @@ Java_com_zwj_lib_zplayer_ZPlayer_open(JNIEnv *env, jobject thiz, jstring url,job
         player = new Player();
         setDistinguishFromObj(env, thiz, reinterpret_cast<jlong>(player));
     }
-    player->open(env->GetStringUTFChars(url, nullptr),holder,ANativeWindow_fromSurface(env, holder),is_use_gl);
+    player->open(env->GetStringUTFChars(url, nullptr), holder,
+                 ANativeWindow_fromSurface(env, holder), is_use_gl);
     mux.unlock();
 }
 
@@ -86,4 +87,19 @@ Java_com_zwj_lib_zplayer_ZPlayer_stop(JNIEnv *env, jobject thiz) {
         player->stop();
     }
     mux.unlock();
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_zwj_lib_zplayer_ZPlayer_setOnProgressListen(JNIEnv *env, jobject thiz,
+                                                     jobject on_progress_listen) {
+
+
+    mux.lock();
+    Player *player = getDistinguishFromObj(env, thiz);
+    if (player != nullptr) {
+        player->setOnProgressListen(env,on_progress_listen);
+    }
+    mux.unlock();
+
 }
